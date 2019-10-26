@@ -11,14 +11,20 @@ mean(colSums(assay(dat[["sim.em"]], "matrix"))) # 147538
 
 h5ls("deng.sim.em.loom")
 
-get.mse <- function(x,y) {
-  s <- rowSums((x-y)^2, na.rm=TRUE)
-  n <- rowSums(!is.nan(x-y))
+get.mse <- function(x, y, loc=NULL) {
+  # loc is a binary matrix of which locations to use
+  if (is.null(loc)) {
+    loc <- apply(as.matrix(x), 2, function(x) !is.nan(x))
+  }
+  loc.i <- loc
+  class(loc.i) <- "integer"
+  s <- rowSums(loc.i * (as.matrix(x)-as.matrix(y))^2, na.rm=TRUE)
+  n <- rowSums(loc)
   s/n
 }
 
 counts <- assay(dat[["sim.uq"]], "matrix")
- 
+
 # EM version
 
 idx <- mcols(dat[["sim.em"]])$Rhat_ase < 1.1 &
@@ -44,15 +50,24 @@ cts <- rowMeans(counts[idx,])
 # calculate MSE
 
 mse.nopp <- get.mse(nopp, true)
-mse.pp <- get.mse(pp, true)
+loc <- apply(as.matrix(nopp), 2, function(x) !is.nan(x))
+mse.pp <- get.mse(pp, true, loc)
 keep <- rowSums(!is.nan(nopp)) >= 15 & !is.nan(mse.nopp - mse.pp)
 table(keep) # 6751 / 5759
 
 library(ggplot2)
 d <- data.frame(log10ave=log10(cts + .1),
                 nopp.minus.pp=(mse.nopp - mse.pp))
+# EM
 ggplot(d[keep,], aes(x=log10ave,y=nopp.minus.pp)) +
   geom_hex(bins=120) +
   geom_hline(yintercept=0, alpha=.6,color="grey") +
   ylim(-.4,.4) +
   scale_fill_gradient2(low="black",mid="red",high="white",midpoint=20)
+
+# uniq
+ggplot(d[keep,], aes(x=log10ave,y=nopp.minus.pp)) +
+  geom_hex(bins=80) +
+  geom_hline(yintercept=0, alpha=.6,color="grey") +
+  ylim(-.15,.15) +
+  scale_fill_gradient2(low="black",mid="red",high="white",midpoint=15)
