@@ -18,7 +18,7 @@ get.mse <- function(x,y) {
 }
 
 counts <- assay(dat[["sim.uq"]], "matrix")
-
+ 
 # EM version
 
 idx <- mcols(dat[["sim.em"]])$Rhat_ase < 1.1 &
@@ -34,9 +34,9 @@ cts <- rowMeans(counts[idx,])
 idx <- mcols(dat[["sim.uq"]])$Rhat_ase < 1.1 &
        mcols(dat[["sim.uq"]])$Selected > 0
 table(idx)
-true <- ( assay(dat[["full.uq"]], "aln_F") /
-          (assay(dat[["full.uq"]], "aln_F") +
-           assay(dat[["full.uq"]], "aln_B")) )[idx,]
+true <- ( assay(dat[["full.uq"]], "uniq_F") /
+          (assay(dat[["full.uq"]], "uniq_F") +
+           assay(dat[["full.uq"]], "uniq_B")) )[idx,]
 nopp <- (assay(dat[["sim.uq"]], "uniq_F") / assay(dat[["sim.uq"]], "uniq_total"))[idx,]
 pp <- assay(dat[["sim.uq"]], "p_k")[idx,]
 cts <- rowMeans(counts[idx,])
@@ -50,7 +50,7 @@ table(keep) # 6751 / 5759
 
 library(ggplot2)
 d <- data.frame(log10ave=log10(cts + .1),
-                nopp.minus.pp=crop((mse.nopp - mse.pp)))
+                nopp.minus.pp=(mse.nopp - mse.pp))
 ggplot(d[keep,], aes(x=log10ave,y=nopp.minus.pp)) +
   geom_hex(bins=120) +
   geom_hline(yintercept=0, alpha=.6,color="grey") +
